@@ -1,54 +1,115 @@
-# React + TypeScript + Vite
+# Monday.com Item Creation Form
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React form that lets you create items directly in your Monday.com boards. Built with their Vibe design system, so it feels right at home with the Monday.com experience.
 
-Currently, two official plugins are available:
+## What it does
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This form automatically pulls your board structure from Monday.com and creates input fields for each column. Currently supports:
 
-## Expanding the ESLint configuration
+- **Text fields** - regular text with validation
+- **Numbers** - with proper numeric validation
+- **Status dropdowns** - pulls your actual status options from the board
+- **Date pickers** - using Monday's own date picker component
+- **Item names** - the main item title field
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+The form validates everything in real-time and shows you exactly what went wrong if something's not right. When you successfully create an item, it shows you a confirmation with the item name and resets the form for the next one.
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Getting Started
+
+### 1. Environment Setup
+
+First, copy the example environment file:
+
+```bash
+cp .env.example .env
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Then open the `.env` file and add your Monday.com credentials:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```env
+VITE_MONDAY_API_KEY=your_actual_api_token_here
+VITE_MONDAY_BOARD_ID=your_board_id_number_here
 ```
+
+**Getting your API token:**
+
+1. Go to your Monday.com account settings > Developer section
+2. Create a new token with "boards:read" and "boards:write" permissions
+3. Copy the token and paste it in your `.env` file
+
+**Finding your board ID:**
+
+1. Open the Monday.com board you want to use
+2. Look at the URL - it'll be something like `https://yourcompany.monday.com/boards/1234567890`
+3. That number (1234567890) is your board ID
+
+### 2. Install and run
+
+```bash
+yarn install
+yarn dev
+```
+
+That's it! The form should load and automatically pull your board structure.
+
+## How it works
+
+The form automatically fetches your board schema from Monday.com and creates the appropriate input fields. Here's the basic flow:
+
+1. On load, it fetches your board columns and their types
+2. Creates form inputs based on each column type
+3. Validates inputs as you type
+4. Submits the data to Monday.com when you hit create
+5. Shows a success message and resets for the next item
+
+## Project Structure
+
+```
+src/
+├── components/ItemForm/
+│   ├── ItemForm.tsx          # Main form component
+│   └── ColumnInput.tsx       # Handles different column types
+├── hooks/
+│   └── useMondayData.ts      # Custom hooks for Monday.com API
+├── services/
+│   └── mondayService.ts      # Monday.com API calls
+└── config/
+    └── monday.ts             # Configuration
+```
+
+## Supported Column Types
+
+| Monday.com Column | What it creates                           |
+| ----------------- | ----------------------------------------- |
+| Text              | Text input with character limit           |
+| Numbers           | Number input with validation              |
+| Status            | Dropdown with your board's status options |
+| Date              | Date picker                               |
+
+## Technical Notes
+
+Built with:
+
+- React + TypeScript
+- Monday.com Vibe Design System
+- React Query for API state management
+- Tailwind CSS for styling
+
+The form uses custom hooks to separate the Monday.com API logic from the UI components. All the API calls are handled through React Query, so you get caching and loading states for free.
+
+## Troubleshooting
+
+**Form not loading?**
+
+- Check your API token has the right permissions
+- Make sure your board ID is correct
+- Open browser dev tools to see any console errors
+
+**Dropdown not showing options?**
+
+- This happens when your status column doesn't have any options set up in Monday.com
+- Go to your board and add some status options to that column
+
+## Contributing
+
+If you want to add support for more column types or fix bugs, feel free to open a pull request. The code is pretty straightforward - most of the logic is in `ColumnInput.tsx` where different column types are handled.
