@@ -1,21 +1,17 @@
-import React, { useState } from 'react';
-import { Button, Heading, TextField, Toast, Loader } from '@vibe/core';
+import React from 'react';
+import { Heading } from '@vibe/core';
+import { FormProvider, useApp } from '../../contexts';
+import { useBoardColumns, useFormSubmit } from '../../hooks';
+import { LoadingSpinner, ErrorMessage, ToastNotification } from '../ui';
+import { FormField, FormActions } from '../forms';
+import { ColumnInput } from './ColumnInput';
 import { MONDAY_CONFIG } from '../../config/monday';
-import { useBoardColumns, useCreateItem } from '../../hooks';
-import { ColumnInput } from './ColumnInput.tsx';
 
-interface FormData {
-  item_name: string;
-  [key: string]: string | number | boolean | null;
-}
+// Inner component that uses the contexts
+const ItemFormContent: React.FC = () => {
+  const { state: appState } = useApp();
 
-export const ItemForm: React.FC = () => {
-  const [formData, setFormData] = useState<FormData>({ item_name: '' });
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [createdItemName, setCreatedItemName] = useState<string>('');
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-  // Fetch board columns and info using custom hook
+  // Fetch board data
   const { data: boardData, isLoading: columnsLoading } = useBoardColumns(
     MONDAY_CONFIG.BOARD_ID
   );
@@ -23,178 +19,92 @@ export const ItemForm: React.FC = () => {
   const boardName = boardData?.boardName || 'Monday Board';
   const columns = boardData?.columns || [];
 
-  // Create item mutation using custom hook
-  const createItemMutation = useCreateItem();
+  // Form submission logic
+  const { handleSubmit, isSubmitting, canSubmit } = useFormSubmit(
+    MONDAY_CONFIG.BOARD_ID
+  );
 
-  // Filter columns to show only supported types
+  // Filter supported columns
   const supportedColumns = columns.filter((col) =>
     ['name', 'text', 'numbers', 'status', 'date'].includes(col.type)
   );
 
-  const handleInputChange = (
-    columnId: string,
-    value: string | number | boolean | null
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [columnId]: value,
-    }));
+  const onSubmit = (e: React.FormEvent) => {
+    handleSubmit(e, supportedColumns);
   };
 
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-
-    // Validate item name
-    if (!formData.item_name.trim()) {
-      errors.item_name = 'Item name is required';
-    }
-
-    // Validate required columns (you can customize this based on your needs)
-    supportedColumns
-      .filter((col) => col.type !== 'name')
-      .forEach((col) => {
-        const value = formData[col.id];
-        if (col.type === 'numbers' && value && isNaN(Number(value))) {
-          errors[col.id] = `${col.title} must be a valid number`;
-        }
-      });
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    console.log(formData);
-
-    const column_values = supportedColumns
-      .filter(
-        (col) =>
-          col.type !== 'name' &&
-          formData[col.id] !== undefined &&
-          formData[col.id] !== ''
-      )
-      .map((col) => ({
-        id: col.id,
-        value: formData[col.id],
-        type: col.type,
-      }));
-
-    createItemMutation.mutate(
-      {
-        boardId: MONDAY_CONFIG.BOARD_ID,
-        payload: {
-          item_name: formData.item_name,
-          column_values,
-        },
-      },
-      {
-        onSuccess: () => {
-          setCreatedItemName(formData.item_name);
-          setShowSuccessToast(true);
-          const resetFormData: FormData = { item_name: '' };
-          supportedColumns.forEach((col) => {
-            if (col.type !== 'name') {
-              resetFormData[col.id] = '';
-            }
-          });
-          console.log(resetFormData);
-          setFormData(resetFormData);
-          setFormErrors({});
-        },
-      }
-    );
-  };
-
+  // Configuration check
   if (!MONDAY_CONFIG.API_TOKEN || !MONDAY_CONFIG.BOARD_ID) {
     return (
-      <div className="p-8 max-w-2xl">
-        <Heading type="h2" className="mb-4 text-red-600">
-          Configuration Required
-        </Heading>
-        <p className="text-gray-600">
-          Please update your API token and Board ID in src/config/monday.ts
-        </p>
-      </div>
+      <ErrorMessage
+        title="Configuration Required"
+        message="Please update your API token and Board ID in src/config/monday.ts"
+      />
     );
   }
 
-  return columnsLoading ? (
-    <Loader size="medium" />
-  ) : (
-    <div className="p-8 max-w-2xl">
-      <Heading type="h1" className="mb-2">
-        Create New Item
-      </Heading>
-      <p className="text-gray-600 mb-6">
-        Add a new item to <strong className="text-gray-800">{boardName}</strong>{' '}
-        board
-      </p>
+  // Loading state
+  if (columnsLoading) {
+    return <LoadingSpinner message="Loading board information..." />;
+  }
 
-      <form onSubmit={handleSubmit}>
-        <div className="flex flex-col gap-4">
-          {/* Item Name Field - Full Width */}
-          <div className="w-full">
-            <TextField
+  // Error state
+  if (appState.error) {
+    return <ErrorMessage title="Error" message={appState.error} />;
+  }
+
+  return (
+    <>
+      <div className="p-8 max-w-2xl">
+        <Heading type="h1" className="mb-2">
+          Create New Item
+        </Heading>
+        <p className="text-gray-600 mb-6">
+          Add a new item to{' '}
+          <strong className="text-gray-800">{boardName}</strong> board
+        </p>
+
+        <form onSubmit={onSubmit}>
+          <div className="flex flex-col gap-4">
+            {/* Item Name Field */}
+            <FormField
+              name="item_name"
               title="Item Name"
               placeholder="Enter item name..."
-              value={formData.item_name}
-              onChange={(value: string) =>
-                setFormData((prev) => ({ ...prev, item_name: value }))
-              }
               required
-              size="medium"
-              validation={
-                formErrors.item_name
-                  ? { status: 'error', text: formErrors.item_name }
-                  : undefined
-              }
-              className="w-full"
+            />
+
+            {/* Dynamic Column Fields */}
+            <div className="flex flex-col gap-4">
+              {supportedColumns
+                .filter((col) => col.type !== 'name')
+                .map((column) => (
+                  <ColumnInput key={column.id} column={column} />
+                ))}
+            </div>
+
+            {/* Submit Button */}
+            <FormActions
+              isSubmitting={isSubmitting}
+              canSubmit={canSubmit}
+              submitLabel="Create Item"
+              onSubmit={onSubmit}
             />
           </div>
+        </form>
+      </div>
 
-          {/* Dynamic Column Fields - Equal Width Grid */}
-          <div className="w-full flex flex-col gap-4">
-            {supportedColumns
-              .filter((col) => col.type !== 'name')
-              .map((column) => (
-                <ColumnInput
-                  key={column.id}
-                  column={column}
-                  value={formData[column.id]}
-                  onChange={(value: string | number | boolean | null) =>
-                    handleInputChange(column.id, value)
-                  }
-                />
-              ))}
-          </div>
+      {/* Toast Notifications */}
+      <ToastNotification />
+    </>
+  );
+};
 
-          <Button
-            type="submit"
-            kind="secondary"
-            size="large"
-            loading={createItemMutation.isPending}
-            disabled={!formData.item_name.trim()}
-          >
-            {createItemMutation.isPending ? 'Creating...' : 'Create Item'}
-          </Button>
-        </div>
-      </form>
-
-      {showSuccessToast && (
-        <Toast
-          open={showSuccessToast}
-          type="positive"
-          onClose={() => setShowSuccessToast(false)}
-        >
-          {`Item '${createdItemName}' created successfully! 🎉`}
-        </Toast>
-      )}
-    </div>
+// Main component with context providers
+export const ItemForm: React.FC = () => {
+  return (
+    <FormProvider>
+      <ItemFormContent />
+    </FormProvider>
   );
 };

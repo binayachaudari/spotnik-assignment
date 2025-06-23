@@ -1,26 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { TextField, Dropdown, DatePicker } from '@vibe/core';
 import moment from 'moment';
 import { BoardColumn, mondayService } from '../../services/mondayService';
+import { useForm } from '../../contexts';
 
 interface ColumnInputProps {
   column: BoardColumn;
-  value: string | number | boolean | null;
-  onChange: (value: string | number | boolean | null) => void;
 }
 
-export const ColumnInput: React.FC<ColumnInputProps> = ({
-  column,
-  value,
-  onChange,
-}) => {
+export const ColumnInput: React.FC<ColumnInputProps> = memo(({ column }) => {
+  const { state, setField } = useForm();
   const [error, setError] = useState<string>('');
+
+  const value = state.formData[column.id] || '';
 
   const validateInput = (
     inputValue: string | number | boolean | null,
     columnType: string
   ): string => {
-    if (!inputValue && columnType !== 'date') return ''; // Allow empty values except for required fields
+    if (!inputValue && columnType !== 'date') return '';
 
     switch (columnType) {
       case 'numbers':
@@ -52,7 +50,7 @@ export const ColumnInput: React.FC<ColumnInputProps> = ({
     setError(validationError);
 
     if (!validationError) {
-      onChange(newValue);
+      setField(column.id, newValue);
     }
   };
 
@@ -86,7 +84,6 @@ export const ColumnInput: React.FC<ColumnInputProps> = ({
         );
 
       case 'status': {
-        // Status column
         const statusOptions = column?.settings_str
           ? mondayService.getStatusOptions(column.settings_str)
           : [];
@@ -128,10 +125,8 @@ export const ColumnInput: React.FC<ColumnInputProps> = ({
               date={value ? moment(value as string) : undefined}
               onPickDate={(date) => {
                 if (date && typeof date === 'object' && 'format' in date) {
-                  // Handle Moment object
                   handleChange(date.format('YYYY-MM-DD'));
                 } else if (date instanceof Date) {
-                  // Handle Date object
                   handleChange(date.toISOString().split('T')[0]);
                 } else {
                   handleChange(null);
@@ -159,4 +154,6 @@ export const ColumnInput: React.FC<ColumnInputProps> = ({
   };
 
   return <div className="w-full">{renderInput()}</div>;
-};
+});
+
+ColumnInput.displayName = 'ColumnInput';
