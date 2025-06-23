@@ -14,102 +14,120 @@ This form automatically pulls your board structure from Monday.com and creates i
 
 The form validates everything in real-time and shows you exactly what went wrong if something's not right. When you successfully create an item, it shows you a confirmation with the item name and resets the form for the next one.
 
-## Getting Started
+### 🎯 Context-Driven State Management
 
-### 1. Environment Setup
+- **AppContext** - Global application state (loading, errors, notifications)
+- **FormContext** - Form-specific state with validation logic
+- Clean separation between global and feature-specific state
 
-First, copy the example environment file:
+### 🪝 Custom Hooks Pattern
 
-```bash
-cp .env.example .env
-```
+- **useToast** - Toast notification management
+- **useFormSubmit** - Form submission logic with error handling
+- **useMondayData** - Monday.com API interactions with React Query
+- Reusable logic extracted from components
 
-Then open the `.env` file and add your Monday.com credentials:
+### 🧩 Component Composition
 
-```env
-VITE_MONDAY_API_KEY=your_actual_api_token_here
-VITE_MONDAY_BOARD_ID=your_board_id_number_here
-```
+- **Presentational Components** - Pure UI components (FormField, LoadingSpinner)
+- **Container Components** - Logic-heavy components using contexts
+- **Memoized Components** - Performance-optimized with React.memo
 
-**Getting your API token:**
-
-1. Go to your Monday.com account settings > Developer section
-2. Create a new token with "boards:read" and "boards:write" permissions
-3. Copy the token and paste it in your `.env` file
-
-**Finding your board ID:**
-
-1. Open the Monday.com board you want to use
-2. Look at the URL - it'll be something like `https://yourcompany.monday.com/boards/1234567890`
-3. That number (1234567890) is your board ID
-
-### 2. Install and run
-
-```bash
-yarn install
-yarn dev
-```
-
-That's it! The form should load and automatically pull your board structure.
-
-## How it works
-
-The form automatically fetches your board schema from Monday.com and creates the appropriate input fields. Here's the basic flow:
-
-1. On load, it fetches your board columns and their types
-2. Creates form inputs based on each column type
-3. Validates inputs as you type
-4. Submits the data to Monday.com when you hit create
-5. Shows a success message and resets for the next item
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 src/
-├── components/ItemForm/
-│   ├── ItemForm.tsx          # Main form component
-│   └── ColumnInput.tsx       # Handles different column types
-├── hooks/
-│   └── useMondayData.ts      # Custom hooks for Monday.com API
-├── services/
-│   └── mondayService.ts      # Monday.com API calls
-└── config/
-    └── monday.ts             # Configuration
+├── components/
+│   ├── forms/                    # Reusable form components
+│   │   ├── FormField.tsx         # Context-aware form field
+│   │   ├── FormActions.tsx       # Submit buttons and actions
+│   │   └── index.ts              # Barrel exports
+│   ├── ItemForm/                 # Feature-specific components
+│   │   ├── ItemForm.tsx          # Main form with providers
+│   │   ├── ColumnInput.tsx       # Monday.com column renderer
+│   │   └── index.ts
+│   └── ui/                       # Reusable UI components
+│       ├── ToastNotification.tsx # Global toast component
+│       ├── LoadingSpinner.tsx    # Loading states
+│       ├── ErrorMessage.tsx      # Error displays
+│       └── index.ts
+├── contexts/                     # React Context providers
+│   ├── AppContext.tsx            # Global app state
+│   ├── FormContext.tsx           # Form state with validation
+│   └── index.ts
+├── hooks/                        # Custom hooks
+│   ├── useMondayData.ts          # API hooks
+│   ├── useFormSubmit.ts          # Form submission logic
+│   ├── useToast.ts               # Toast management
+│   └── index.ts
+├── services/                     # Business logic layer
+│   └── mondayService.ts          # Monday.com API service
+├── config/                       # Configuration
+│   └── monday.ts                 # Monday.com config
+└── constants/                    # App constants
+    └── queryKeys.ts              # React Query keys
 ```
 
-## Supported Column Types
+## 🚀 Getting Started
 
-| Monday.com Column | What it creates                           |
-| ----------------- | ----------------------------------------- |
-| Text              | Text input with character limit           |
-| Numbers           | Number input with validation              |
-| Status            | Dropdown with your board's status options |
-| Date              | Date picker                               |
+### 1. Environment Setup
 
-## Technical Notes
+```bash
+# Clone and install dependencies
+yarn install
 
-Built with:
+# Set up environment variables
+cp .env.example .env
+```
 
-- React + TypeScript
-- Monday.com Vibe Design System
-- React Query for API state management
-- Tailwind CSS for styling
+Add your Monday.com credentials to `.env`:
 
-The form uses custom hooks to separate the Monday.com API logic from the UI components. All the API calls are handled through React Query, so you get caching and loading states for free.
+```env
+VITE_MONDAY_API_KEY=your_api_token_here
+VITE_MONDAY_BOARD_ID=your_board_id_here
+```
 
-## Troubleshooting
+### 2. Getting Monday.com Credentials
 
-**Form not loading?**
+**API Token:**
 
-- Check your API token has the right permissions
-- Make sure your board ID is correct
-- Open browser dev tools to see any console errors
+1. Monday.com → Profile → Developer → Create new token
+2. Grant `boards:read` and `boards:write` permissions
+3. Copy token to your `.env` file
 
-**Dropdown not showing options?**
+**Board ID:**
 
-- This happens when your status column doesn't have any options set up in Monday.com
-- Go to your board and add some status options to that column
+1. Open your Monday.com board
+2. Extract ID from URL: `https://yourcompany.monday.com/boards/1234567890`
+3. Use `1234567890` as your board ID
 
-## Contributing
+### 3. Run the Application
 
-If you want to add support for more column types or fix bugs, feel free to open a pull request. The code is pretty straightforward - most of the logic is in `ColumnInput.tsx` where different column types are handled.
+```bash
+yarn dev
+```
+
+## 🔧 Development Patterns
+
+## 📚 Supported Column Types
+
+| Monday Column | Component Used     | Validation             |
+| ------------- | ------------------ | ---------------------- |
+| Text          | TextField          | Character limits       |
+| Numbers       | TextField (number) | Numeric validation     |
+| Status        | Dropdown           | Required selection     |
+| Date          | DatePicker         | Date format validation |
+| Custom        | Extensible         | Custom validation      |
+
+## 🛠️ Extending the Application
+
+### Adding New Column Types
+
+1. **Update service layer** in `mondayService.ts`
+2. **Add component** to `ColumnInput.tsx`
+3. **Include validation** in FormContext
+4. **Update TypeScript types**
+
+---
+
+Built with ❤️ using React, TypeScript, and Monday.com Vibe Design System
