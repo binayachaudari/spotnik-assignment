@@ -74,7 +74,7 @@ src/
 
 ```bash
 # Clone and install dependencies
-yarn install
+npm install
 
 # Set up environment variables
 cp .env.example .env
@@ -104,7 +104,7 @@ VITE_MONDAY_BOARD_ID=your_board_id_here
 ### 3. Run the Application
 
 ```bash
-yarn dev
+npm run dev
 ```
 
 ## 🔧 Development Patterns
