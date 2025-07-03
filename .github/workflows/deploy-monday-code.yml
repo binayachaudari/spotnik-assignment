@@ -1,0 +1,52 @@
+name: Deploy to monday code
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: |
+          yarn install --frozen-lockfile
+
+      - name: Build React application
+        run: |
+          yarn build
+        env:
+          VITE_MONDAY_API_KEY: ${{ env.MONDAY_ACCESS_TOKEN }}
+          VITE_MONDAY_BOARD_ID: ${{ env.MONDAY_BOARD_ID }}
+
+      - name: Install monday code CLI
+        run: |
+          yarn global add @mondaycom/apps-cli
+
+      - name: Verify CLI installation
+        run: |
+          mapps help
+
+      - name: Configure monday code CLI
+        run: |
+          echo "${{ secrets.MONDAY_API_TOKEN }}"  
+          mapps init -t ${{ secrets.MONDAY_API_TOKEN }}
+        env:
+          MONDAY_API_TOKEN: ${{ secrets.MONDAY_API_TOKEN }}
+
+      - name: Deploy to monday code
+        run: |
+          mapps code:push  -i 10902342
+        env:
+          MONDAY_API_TOKEN: ${{ secrets.MONDAY_API_TOKEN }}
