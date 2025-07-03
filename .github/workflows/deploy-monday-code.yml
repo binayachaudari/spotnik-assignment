@@ -17,22 +17,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
 
-      - name: Install dependencies
+      - name: Install dependencies with npm
         run: |
-          yarn install --frozen-lockfile
+          npm install --force
 
       - name: Build React application
         run: |
-          yarn build
+          npm run build
         env:
           VITE_MONDAY_API_KEY: ${{ env.MONDAY_ACCESS_TOKEN }}
           VITE_MONDAY_BOARD_ID: ${{ env.MONDAY_BOARD_ID }}
 
       - name: Install monday code CLI
         run: |
-          yarn add @mondaycom/apps-cli
+          npm install -g @mondaycom/apps-cli
 
       - name: Verify CLI installation
         run: |
@@ -47,6 +46,6 @@ jobs:
 
       - name: Deploy to monday code
         run: |
-          mapps code:push  -i 10902342
+          mapps code:push -i 10902342
         env:
           MONDAY_API_TOKEN: ${{ secrets.MONDAY_API_TOKEN }}
