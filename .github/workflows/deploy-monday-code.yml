@@ -32,7 +32,7 @@ jobs:
 
       - name: Install monday code CLI
         run: |
-          yarn global add @mondaycom/apps-cli
+          yarn add @mondaycom/apps-cli
 
       - name: Verify CLI installation
         run: |
