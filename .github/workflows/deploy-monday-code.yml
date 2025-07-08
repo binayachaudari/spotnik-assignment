@@ -3,7 +3,6 @@ name: Deploy to monday code
 on:
   push:
     branches: [master]
-  workflow_dispatch:
 
 jobs:
   deploy:
@@ -17,11 +16,11 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 'latest'
 
       - name: Install dependencies with npm
         run: |
-          npm install --force
+          npm ci
 
       - name: Build React application
         run: |
